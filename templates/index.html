@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PO/MO文件翻译器</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: rgba(210, 232, 239, 0.4);
+        }
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-height: 800px;
+        }
+        .log-section {
+            width: 300px;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+            background-color: #fafafa;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-section {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            color: #333;
+            font-size: 24px;
+        }
+        .button-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        .left-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .right-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+        .file-input {
+            display: none;
+        }
+        .progress-section {
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        .status {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        .preview-table {
+            flex: 1;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .preview-table th, .preview-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .preview-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        .preview-table tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        .preview-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 400px;
+            background: white;
+        }
+        #logContent {
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        .log-error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .log-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .log-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .time-remaining {
+            margin-left: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .download-button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .download-button:hover {
+            background-color: #0056b3;
+        }
+        .preview-table td {
+            position: relative;
+        }
+        .preview-table td[contenteditable="true"] {
+            padding: 4px;
+            outline: none;
+        }
+        .preview-table td[contenteditable="true"]:focus {
+            background-color: #e8f0fe;
+            box-shadow: inset 0 0 0 2px #4285f4;
+        }
+        .preview-table td[contenteditable="true"]:hover:not(:focus) {
+            background-color: #f8f9fa;
+        }
+        .save-button {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .save-button:hover {
+            background-color: #218838;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="log-section">
+            <div class="header">
+                <h2>日志信息</h2>
+            </div>
+            <div id="logContent"></div>
+        </div>
+        
+        <div class="main-section">
+            <div class="header">
+                <h1>PO/MO文件翻译器</h1>
+            </div>
+            
+            <div class="button-section">
+                <div class="left-buttons">
+                    <input type="file" id="fileInput" class="file-input" accept=".po,.mo">
+                    <button class="button" onclick="document.getElementById('fileInput').click()">选择文件</button>
+                    <button id="translateBtn" class="button" disabled>开始翻译</button>
+                    <span id="fileName"></span>
+                    <span id="timeRemaining" class="time-remaining">预计剩余时间: --:--</span>
+                </div>
+                <div class="right-buttons">
+                    <button id="saveBtn" class="save-button">保存修改</button>
+                    <button id="downloadBtn" class="download-button">下载翻译文件</button>
+                </div>
+            </div>
+            
+            <div class="progress-section" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <div class="status">
+                    <span id="progressText">0%</span>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="preview-table">
+                    <thead>
+                        <tr>
+                            <th>原文</th>
+                            <th>译文</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const translateBtn = document.getElementById('translateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const fileName = document.getElementById('fileName');
+        const progressSection = document.querySelector('.progress-section');
+        const progressFill = document.querySelector('.progress-fill');
+        const progressText = document.getElementById('progressText');
+        const timeRemaining = document.getElementById('timeRemaining');
+        const logContent = document.getElementById('logContent');
+        const previewTableBody = document.getElementById('previewTableBody');
+        
+        let currentFile = null;
+        let isTranslating = false;
+        let currentFilename = null;
+        let hasUnsavedChanges = false;
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type === 'error' ? 'log-error' : type === 'warning' ? 'log-warning' : type === 'success' ? 'log-success' : ''}`;
+            entry.textContent = message;
+            logContent.appendChild(entry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        function resetUI() {
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            timeRemaining.textContent = '预计剩余时间: --:--';
+            isTranslating = false;
+            translateBtn.disabled = false;
+            progressSection.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            saveBtn.style.display = 'none';
+            hasUnsavedChanges = false;
+        }
+        
+        function updatePreviewTable(previewData) {
+            const existingRows = Array.from(previewTableBody.children);
+            
+            previewData.forEach((item, index) => {
+                let row;
+                if (index < existingRows.length) {
+                    row = existingRows[index];
+                    row.children[0].textContent = item.msgid;
+                    row.children[1].textContent = item.msgstr;
+                } else {
+                    row = document.createElement('tr');
+                    const msgidCell = document.createElement('td');
+                    const msgstrCell = document.createElement('td');
+                    
+                    msgidCell.textContent = item.msgid;
+                    msgstrCell.textContent = item.msgstr;
+                    msgstrCell.contentEditable = true;
+                    
+                    msgstrCell.addEventListener('input', () => {
+                        hasUnsavedChanges = true;
+                        saveBtn.style.display = 'inline-block';
+                    });
+                    
+                    row.appendChild(msgidCell);
+                    row.appendChild(msgstrCell);
+                    previewTableBody.appendChild(row);
+                }
+            });
+        }
+        
+        saveBtn.addEventListener('click', async () => {
+            if (!hasUnsavedChanges || !currentFilename) return;
+            
+            const edits = [];
+            const rows = previewTableBody.getElementsByTagName('tr');
+            
+            for (const row of rows) {
+                const msgid = row.children[0].textContent;
+                const msgstr = row.children[1].textContent;
+                edits.push({ msgid, msgstr });
+            }
+            
+            try {
+                const response = await fetch('/save_edits', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: currentFilename,
+                        edits: edits
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addLog('修改已保存', 'success');
+                    currentFilename = data.filename;
+                    hasUnsavedChanges = false;
+                    saveBtn.style.display = 'none';
+                    downloadBtn.style.display = 'inline-block';
+                } else {
+                    throw new Error(data.error || '保存失败');
+                }
+            } catch (error) {
+                addLog(`保存失败: ${error.message}`, 'error');
+            }
+        });
+        
+        downloadBtn.addEventListener('click', () => {
+            if (!currentFilename) return;
+            window.location.href = `/download/${encodeURIComponent(currentFilename)}`;
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.textContent = file.name;
+                translateBtn.disabled = false;
+                currentFile = file;
+                addLog(`已选择文件: ${file.name}`);
+                logContent.innerHTML = '';
+                resetUI();
+                previewTableBody.innerHTML = '';
+            }
+        });
+        
+        translateBtn.addEventListener('click', async () => {
+            if (!currentFile || isTranslating) return;
+            
+            isTranslating = true;
+            translateBtn.disabled = true;
+            progressSection.style.display = 'block';
+            addLog('开始上传文件...', 'info');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', currentFile);
+                
+                const uploadResponse = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!uploadResponse.ok) {
+                    const error = await uploadResponse.json();
+                    throw new Error(error.error || '文件上传失败');
+                }
+                
+                const uploadData = await uploadResponse.json();
+                addLog('文件上传成功，开始翻译...', 'success');
+                
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filepath: uploadData.filepath,
+                        filename: uploadData.filename
+                    })
+                });
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                while (true) {
+                    const {value, done} = await reader.read();
+                    if (done) break;
+                    
+                    const text = decoder.decode(value);
+                    const lines = text.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            if (data.error) {
+                                addLog(`错误: ${data.error}`, 'error');
+                                resetUI();
+                                return;
+                            }
+                            
+                            if (data.status === 'complete') {
+                                progressFill.style.width = '100%';
+                                progressText.textContent = '100%';
+                                timeRemaining.textContent = '翻译完成';
+                                
+                                if (data.warning) {
+                                    addLog(data.warning, 'warning');
+                                }
+                                
+                                addLog(`翻译完成！共处理 ${data.total_processed}/${data.total_entries} 个条目`, 'success');
+                                
+                                currentFilename = data.output_filename;
+                                downloadBtn.style.display = 'inline-block';
+                                
+                                resetUI();
+                                return;
+                            }
+                            
+                            if (data.progress !== undefined) {
+                                progressFill.style.width = `${data.progress}%`;
+                                progressText.textContent = `${Math.round(data.progress)}%`;
+                                if (data.time_remaining) {
+                                    timeRemaining.textContent = `预计剩余时间: ${data.time_remaining}`;
+                                }
+                                
+                                if (data.failed > 0) {
+                                    addLog(`警告: ${data.failed} 个条目翻译失败`, 'warning');
+                                }
+                                
+                                addLog(`已处理: ${data.processed}/${data.total} 个条目`);
+                                
+                                if (data.preview) {
+                                    updatePreviewTable(data.preview);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                addLog(`错误: ${error.message}`, 'error');
+                resetUI();
+            }
+        });
+    </script>
+</body>
+</html>
